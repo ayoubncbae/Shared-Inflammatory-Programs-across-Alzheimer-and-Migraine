@@ -1,154 +1,165 @@
-# AD--migraine transcriptomics: reproducible Python export
+# AD--migraine PBMC transcriptomics analysis
 
-This directory contains Python conversions of the two supplied notebooks. The
-analysis logic and cell order were retained. Notebook-only package commands
-were removed, Kaggle/Colab absolute paths were changed to repository-relative
-paths, and one per-gene cluster-mapping loop was vectorized without changing its
-cluster-mean assignment rule so the standalone workflow finishes practically.
+Reproducible Python implementation of the analyses originally developed in
+`notebookfa40ae7b07.ipynb` and `transcriptomics-add-migrain.ipynb`.
 
-## Files
+The workflow processes the GSE181279 and GSE269117 single-cell RNA-seq datasets,
+performs quality control, normalization, HVG selection, PCA/UMAP, Leiden
+clustering, cluster-marker analysis, donor-level pseudobulk differential
+expression, shared-gene/pathway analysis, and manuscript figure/table
+generation.
 
-- `01_notebookfa40ae7b07.py`: cell-by-cell export of
-  `notebookfa40ae7b07.ipynb` (the earlier analysis history).
-- `02_transcriptomics_add_migraine.py`: cell-by-cell export of
-  `transcriptomics-add-migrain.ipynb` (the complete notebook history).
-- `analysis_pipeline.py`: the final self-contained, corrected low-memory
-  pipeline cell from the second notebook. **Run this file to reproduce the
-  complete analysis.**
-- `generate_additional_results.py`: direct export of the notebook's final
-  additional immune-state abundance figure cell.
-- `convert_notebooks.py`: regenerates all Python files from the original
-  notebooks, which should remain one directory above this folder.
-- `reference_results/`: copies of the four supplied target result images for
-  visual comparison.
+## Repository contents
 
-The two numbered exports include the notebook's exploratory attempts and cells
-that originally raised errors before corrected cells were added. They are kept
-for exact provenance and are not the recommended entry point. The clean
-`analysis_pipeline.py` is directly extracted from the notebook's final
-self-contained pipeline cell, rather than being a rewritten analysis.
+- `analysis_pipeline.py` — main validated, start-to-finish analysis.
+- `generate_additional_results.py` — generates the additional abundance table
+  and Figure 3 after the main analysis.
+- `01_notebookfa40ae7b07.py` — cell-by-cell Python export of the first notebook.
+- `02_transcriptomics_add_migraine.py` — cell-by-cell Python export of the
+  second notebook.
+- `requirements.txt` — Python dependencies.
+- `reference_results/` — the four supplied reference-result images.
 
-## 1. Clone and create an environment
+The numbered exports retain the notebooks' full development history, including
+earlier exploratory cells. Use `analysis_pipeline.py`, not the numbered exports,
+for a clean reproducible run.
 
-Python 3.11 is recommended. From this directory:
+## System requirements
+
+- Python 3.11 recommended
+- Approximately 4 GB of available RAM or more
+- Approximately 3 GB of free disk space
+- Internet access if the raw GEO archives are not supplied manually
+
+The complete workflow was validated on Windows using Python 3.11 and Scanpy
+1.11.5. The main analysis took approximately 15 minutes on the validation
+workstation.
+
+## Installation
+
+Clone the repository and enter its directory:
 
 ```bash
-python -m venv .venv
+git clone <YOUR-REPOSITORY-URL>
+cd AD_migraine_transcriptomics_GitHub
 ```
 
-Activate it:
+Create and activate a virtual environment.
+
+Windows PowerShell:
 
 ```powershell
-# Windows PowerShell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-or:
-
-```bash
-# Linux/macOS
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## 2. Provide the raw GEO archives
+Linux/macOS:
 
-Create `data` inside this directory and place the two unmodified archives in
-it:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+## Input data
+
+Create a directory named `data` in the repository root:
 
 ```text
-final_code_2/
-|-- data/
-|   |-- GSE181279_RAW.tar
-|   `-- GSE269117_RAW.tar
-|-- analysis_pipeline.py
-`-- requirements.txt
+AD_migraine_transcriptomics_GitHub/
+├── data/
+│   ├── GSE181279_RAW.tar
+│   └── GSE269117_RAW.tar
+├── analysis_pipeline.py
+└── requirements.txt
 ```
 
-The archives are available from GEO accessions GSE181279 and GSE269117. If the
-files are absent, `analysis_pipeline.py` attempts to download them from NCBI.
-They are excluded by `.gitignore` because they are too large for ordinary
-GitHub storage.
+Download the unmodified GEO supplementary archives for accessions GSE181279
+and GSE269117 and retain the exact filenames shown above. Alternatively, run
+the main pipeline with an empty `data` directory; it will attempt to download
+both archives from NCBI automatically.
 
-For the supplied local project, copy them with:
+Expected archive checksums:
 
-```powershell
-New-Item -ItemType Directory -Path .\data -Force
-Copy-Item ..\datasets\GSE181279_RAW.tar .\data\
-Copy-Item ..\datasets\GSE269117_RAW.tar .\data\
-```
+| Archive | SHA-256 |
+|---|---|
+| `GSE181279_RAW.tar` | `58c82995fe1bf261e5f8a549ed31d482cb6355983b92dd71c5d3161e02ab59d3` |
+| `GSE269117_RAW.tar` | `77e8341a188995c2aa287197b959c24f9f2178a620d43c9312077bf239625b97` |
 
-## 3. Run the analysis
+The raw archives and extracted matrices are excluded from Git through
+`.gitignore` because they exceed normal GitHub file-size limits.
 
-Always run from the `final_code_2` directory:
+## Run the analysis
+
+Run all commands from the repository root.
+
+First run the complete main analysis:
 
 ```bash
 python analysis_pipeline.py
 ```
 
-The pipeline performs raw-data extraction, QC, normalization, HVG selection,
-PCA/UMAP, Leiden clustering, cluster-marker analysis, donor-level pseudobulk
-DE, shared-gene/pathway analysis, and manuscript figure/table generation.
-
-Main outputs are written to:
+A successful run finishes with `DONE.` and creates:
 
 ```text
 AD_Migraine_Final_Analysis/
-|-- figures/
-|-- tables/
-`-- objects/
+├── figures/
+├── objects/
+├── tables/
+├── AD_Migraine_Final_Result_Tables.xlsx
+└── Auto_Result_Section_Interpretation.txt
 ```
 
-The pipeline also produces `AD_Migraine_Final_Analysis_Package.zip`.
+It also creates `AD_Migraine_Final_Analysis_Package.zip`.
 
-After the main pipeline completes, generate the notebook's additional result:
+Next generate the additional abundance result:
 
 ```bash
 python generate_additional_results.py
 ```
 
-## 4. Validated result checkpoint
+This adds Table IV and Figure 3 to the existing output directories.
 
-The complete README workflow was run successfully on Windows with Python 3.11
-and Scanpy 1.11.5 on 2026-09-27. The main pipeline finished in approximately 15
-minutes on the validation workstation and the additional-results script took
-under 10 seconds. The run retained 36,772 GSE181279 cells and 27,158 GSE269117
-cells (63,930 total), retained 29,603 genes, used 5 AD-study donor profiles and
-10 migraine-study donor profiles, and generated 21 data-driven clusters.
+## Validated checkpoint
 
-Successful completion prints `DONE.` and creates:
+The tested workflow completed with exit code 0 for both commands and produced:
 
-- `AD_Migraine_Final_Analysis/AD_Migraine_Final_Result_Tables.xlsx`
-- `AD_Migraine_Final_Analysis/Auto_Result_Section_Interpretation.txt`
-- `AD_Migraine_Final_Analysis/figures/Picture1_Atlas_and_Shared_Gene_Convergence.*`
-- `AD_Migraine_Final_Analysis/figures/Picture2_Shared_Pathway_and_Abundance_Contrast.*`
-- `AD_Migraine_Final_Analysis/figures/Figure3_Cluster_Abundance_Contrast_600dpi.*`
-- `AD_Migraine_Final_Analysis/tables/Table1_dataset_and_analysis_summary.csv`
-- `AD_Migraine_Final_Analysis/tables/Table2_shared_AD_Migraine_genes.csv`
-- `AD_Migraine_Final_Analysis/tables/Table3_shared_immune_pathway_enrichment.csv`
-- `AD_Migraine_Final_Analysis/tables/Table4_top_cluster_abundance_shifts.csv`
-- `AD_Migraine_Final_Analysis_Package.zip`
+- 36,772 retained GSE181279 cells
+- 27,158 retained GSE269117 cells
+- 63,930 retained cells in total
+- 29,603 retained genes
+- 5 AD-study donor profiles
+- 10 migraine-study donor profiles
+- 21 data-driven clusters
 
-Small numeric or UMAP-layout differences can occur if major dependency versions,
-BLAS implementations, or operating systems differ; the random seed and
-dependency ranges are specified by the exported code and `requirements.txt`.
+Key output files include:
 
-## Regenerate the exports
+- `figures/Picture1_Atlas_and_Shared_Gene_Convergence.png`
+- `figures/Picture2_Shared_Pathway_and_Abundance_Contrast.png`
+- `figures/Figure3_Cluster_Abundance_Contrast_600dpi.png`
+- `tables/Table1_dataset_and_analysis_summary.csv`
+- `tables/Table2_shared_AD_Migraine_genes.csv`
+- `tables/Table3_shared_immune_pathway_enrichment.csv`
+- `tables/Table4_top_cluster_abundance_shifts.csv`
 
-If the original notebooks are present one directory above `final_code_2`:
+Small differences in UMAP coordinates or figure rendering may occur across
+operating systems, BLAS implementations, or major dependency changes. The
+analysis random seed and validated dependency versions are defined in the code and
+`requirements.txt`.
 
-```bash
-python convert_notebooks.py
-```
+## Implementation notes
 
-Then confirm syntax with:
+The standalone export makes only portability/runtime changes to the notebook
+workflow:
 
-```bash
-python -m py_compile 01_notebookfa40ae7b07.py 02_transcriptomics_add_migraine.py analysis_pipeline.py generate_additional_results.py
-```
+- Kaggle-specific paths were replaced with repository-relative paths.
+- Notebook package-install commands were moved to `requirements.txt`.
+- The original cluster-mean assignment was vectorized without changing its
+  assignment rule.
+- Matplotlib 3.10 and Windows UTF-8 compatibility were added.
+
+All biological thresholds and analysis steps remain those used by the final
+notebook pipeline.
